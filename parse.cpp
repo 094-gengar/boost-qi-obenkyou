@@ -8,30 +8,34 @@ using qi::_1, qi::_val;
 template<class Iterator>
 struct Calc : qi::grammar<Iterator, int(void), qi::space_type> {
 	qi::rule<Iterator, int(void), qi::space_type> Factor;
-	qi::rule<Iterator, int(void), qi::space_type> Expr, Expr1, Expr2;
-	qi::rule<Iterator, int(void), qi::space_type> BoolExpr;
+	qi::rule<Iterator, int(void), qi::space_type> Expr, E1, E2, E3, E4, E5;
 	//qi::rule<Iterator, std::vector<char>(void), qi::space_type> Ident;
 
 	Calc() : Calc::base_type(Expr)
 	{
 		//Ident %= (qi::alpha | qi::char_('_')) >> *(qi::alnum | qi::char_('_'));
-		Expr %= BoolExpr;
+		Expr %= E5;
 
 		Factor %= qi::skip(qi::space) \
 			[qi::int_ | '(' >> Expr >> ')'];
-		BoolExpr %= qi::skip(qi::space) \
-			[Expr1[_val = _1] >>
-				*(("==" >> Expr1[_val = _val == _1])
-				| ("!=" >> Expr1[_val = _val != _1])
-				| ('<' >> Expr1[_val = _val < _1])
-				| ('>' >> Expr1[_val = _val > _1])
-				| ("<=" >> Expr1[_val = _val <= _1])
-				| (">=" >> Expr1[_val = _val >= _1]))];
-		Expr1 %= qi::skip(qi::space) \
-			[Expr2[_val = _1] >>
-				*(('+' >> Expr2[_val += _1])
-				| ('-' >> Expr2[_val -= _1]))];
-		Expr2 %= qi::skip(qi::space) \
+		E5 %= qi::skip(qi::space) \
+			[E4[_val = _1] >>
+				*(("&&" >> E4[_val = _val && _1])
+				| ("||" >> E4[_val = _val || _1]))];
+		E4 %= E3[_val = _1] | qi::skip(qi::space)['!' >> E3[_val = !_1]];
+		E3 %= qi::skip(qi::space) \
+			[E2[_val = _1] >>
+				*(("==" >> E2[_val = _val == _1])
+				| ("!=" >> E2[_val = _val != _1])
+				| ('<' >> E2[_val = _val < _1])
+				| ('>' >> E2[_val = _val > _1])
+				| ("<=" >> E2[_val = _val <= _1])
+				| (">=" >> E2[_val = _val >= _1]))];
+		E2 %= qi::skip(qi::space) \
+			[E1[_val = _1] >>
+				*(('+' >> E1[_val += _1])
+				| ('-' >> E1[_val -= _1]))];
+		E1 %= qi::skip(qi::space) \
 			[Factor[_val = _1] >>
 				*(('*' >> Factor[_val *= _1])
 				| ('/' >> Factor[_val /= _1])
