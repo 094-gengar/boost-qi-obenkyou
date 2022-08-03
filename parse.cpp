@@ -18,23 +18,23 @@ struct Calc : qi::grammar<Iterator, int(void), qi::space_type> {
 
 		Factor %= (qi::int_ | '(' >> Expr >> ')');
 		E5 %= (E4[_val = _1] >>
-				*(("&&" >> E4[_val = _val && _1])
-				| ("||" >> E4[_val = _val || _1])));
+			*(("&&" >> E4[_val = _val && _1])
+			| ("||" >> E4[_val = _val || _1])));
 		E4 %= E3[_val = _1] | ('!' >> E3[_val = !_1]);
 		E3 %= (E2[_val = _1] >>
-				*(("==" >> E2[_val = _val == _1])
-				| ("!=" >> E2[_val = _val != _1])
-				| ('<' >> E2[_val = _val < _1])
-				| ('>' >> E2[_val = _val > _1])
-				| ("<=" >> E2[_val = _val <= _1])
-				| (">=" >> E2[_val = _val >= _1])));
+			*(("==" >> E2[_val = _val == _1])
+			| ("!=" >> E2[_val = _val != _1])
+			| ('<' >> E2[_val = _val < _1])
+			| ('>' >> E2[_val = _val > _1])
+			| ("<=" >> E2[_val = _val <= _1])
+			| (">=" >> E2[_val = _val >= _1])));
 		E2 %= (E1[_val = _1] >>
-				*(('+' >> E1[_val += _1])
-				| ('-' >> E1[_val -= _1])));
+			*(('+' >> E1[_val += _1])
+			| ('-' >> E1[_val -= _1])));
 		E1 %= (Factor[_val = _1] >>
-				*(('*' >> Factor[_val *= _1])
-				| ('/' >> Factor[_val /= _1])
-				| ('%' >> Factor[_val %= _1])));
+			*(('*' >> Factor[_val *= _1])
+			| ('/' >> Factor[_val /= _1])
+			| ('%' >> Factor[_val %= _1])));
 	}
 };
 
