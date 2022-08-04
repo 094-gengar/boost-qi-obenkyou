@@ -1,0 +1,14 @@
+let x, y
+fn main
+  x = 1
+  x = 3 * 5 * 7
+  if x == 105 then
+    y = yes
+  else
+    y = no
+  end
+  while x < 100 do
+    x = x + 1
+  end
+  print x
+end

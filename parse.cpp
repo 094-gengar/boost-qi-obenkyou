@@ -1,69 +1,116 @@
+#include <cassert>
 #include <iostream>
+#include <fstream>
+#include <vector>
+#include <boost/fusion/tuple.hpp>
 #include <boost/spirit/include/qi.hpp>
 #include <boost/spirit/include/phoenix.hpp>
 
+#include "ast.hpp"
+
 namespace qi = boost::spirit::qi;
+namespace ph = boost::phoenix;
 using qi::_1, qi::_val;
 
-template<class Iterator>
-struct Calc : qi::grammar<Iterator, int(void), qi::space_type> {
-	qi::rule<Iterator, int(void), qi::space_type> Factor;
-	qi::rule<Iterator, int(void), qi::space_type> Expr, E1, E2, E3, E4, E5;
-	//qi::rule<Iterator, std::vector<char>(void), qi::space_type> Ident;
+namespace myLang {
+namespace parser {
+template<class Iterator, class Skipper>
+struct Calc : qi::grammar<Iterator, ast::ModuleAst*(), Skipper> {
+	qi::rule<Iterator, std::string(), Skipper> Ident;
+	qi::rule<Iterator, std::vector<std::string>(), Skipper> Vars;
+	qi::rule<Iterator, ast::FuncAst*(), Skipper> Func;
+	qi::rule<Iterator, ast::ModuleAst*(), Skipper> Module;
+	qi::rule<Iterator, ast::BaseAst*(), Skipper> Stmt;
+	qi::rule<Iterator, ast::BuiltinAst*(), Skipper> Builtin;
+	qi::rule<Iterator, ast::AssignAst*(), Skipper> Assign;
+	qi::rule<Iterator, ast::IfStmtAst*(), Skipper> IfStmt;
+	qi::rule<Iterator, ast::WhileStmtAst*(), Skipper> WhileStmt;
+	qi::rule<Iterator, ast::StmtsAst*(), Skipper> Stmts;
+	qi::rule<Iterator, ast::BaseAst*(), Skipper> Factor;
+	qi::rule<Iterator, ast::BaseAst*(), Skipper> Expr, E1, E2, E3, E4;
 
-	Calc() : Calc::base_type(Expr)
+	Calc() : Calc::base_type(Module)
 	{
-		//Ident %= (qi::alpha | qi::char_('_')) >> *(qi::alnum | qi::char_('_'));
-		Expr %= E5;
+		Module = Vars[_val = ph::new_<ast::ModuleAst>(), ph::at_c<0>(*_val) = _1] >> *Func[ph::push_back(ph::at_c<1>(*_val), _1)];
+		// Ident = qi::lexeme[(qi::alpha[_val = _1] | qi::char_('_')[_val = _1]) >> *(qi::alnum[_val += _1] | qi::char_('_')[_val += 1])];
+		Ident = qi::lexeme[qi::alpha[_val = _1] >> *qi::alnum[_val += _1]];
+		Vars = "let" >> Ident[ph::push_back(_val, _1)] >> *(',' >> Ident[ph::push_back(_val, _1)]);
+		Func = "fn" >> Ident[_val = ph::new_<ast::FuncAst>(_1)] >> *Stmts[ph::push_back(ph::at_c<1>(*_val), _1)] >> "end";
+		Stmt = Builtin | Assign | IfStmt | WhileStmt;
+		Assign = Ident[_val = ph::new_<ast::AssignAst>(_1)] >> '=' >> Expr[ph::at_c<1>(*_val) = _1];
+		Builtin =
+			  ("break" >> qi::eps[_val = ph::new_<ast::BuiltinAst>("break")])
+			| ("continue" >> qi::eps[_val = ph::new_<ast::BuiltinAst>("continue")])
+			| ("exit" >> qi::eps[_val = ph::new_<ast::BuiltinAst>("exit")])
+			| ("return" >> qi::eps[_val = ph::new_<ast::BuiltinAst>("return")])
+			| ("print" >> Ident[_val = ph::new_<ast::BuiltinAst>("print"), ph::push_back(ph::at_c<1>(*_val), ph::new_<ast::IdentAst>(_1))])
+			| ("scan" >> Ident[_val = ph::new_<ast::BuiltinAst>("scan"), ph::push_back(ph::at_c<1>(*_val), ph::new_<ast::IdentAst>(_1))]);
+		IfStmt = "if" >> Expr[_val = ph::new_<ast::IfStmtAst>(), ph::at_c<0>(*_val) = _1]
+			>> "then" >> Stmts[ph::at_c<1>(*_val) = _1]
+			>> -("else" >> Stmts[ph::at_c<2>(*_val) = _1])
+			>> "end";
+		WhileStmt = "while" >> Expr[_val = ph::new_<ast::WhileStmtAst>(), ph::at_c<0>(*_val) = _1] >> "do"
+			>> *Stmts[ph::push_back(ph::at_c<1>(*_val), _1)] >> "end";
+		Stmts = qi::eps[_val = ph::new_<ast::StmtsAst>()]
+			>> Stmt[ph::push_back(ph::at_c<0>(*_val), _1)]
+			>> *(';' >> Stmt[ph::push_back(ph::at_c<0>(*_val), _1)]);
 
-		Factor %= (qi::int_ | '(' >> Expr >> ')');
-		E5 %= (E4[_val = _1] >>
-			*(("&&" >> E4[_val = _val && _1])
-			| ("||" >> E4[_val = _val || _1])));
-		E4 %= E3[_val = _1] | ('!' >> E3[_val = !_1]);
-		E3 %= (E2[_val = _1] >>
-			*(("==" >> E2[_val = _val == _1])
-			| ("!=" >> E2[_val = _val != _1])
-			| ('<' >> E2[_val = _val < _1])
-			| ('>' >> E2[_val = _val > _1])
-			| ("<=" >> E2[_val = _val <= _1])
-			| (">=" >> E2[_val = _val >= _1])));
-		E2 %= (E1[_val = _1] >>
-			*(('+' >> E1[_val += _1])
-			| ('-' >> E1[_val -= _1])));
-		E1 %= (Factor[_val = _1] >>
-			*(('*' >> Factor[_val *= _1])
-			| ('/' >> Factor[_val /= _1])
-			| ('%' >> Factor[_val %= _1])));
+		Factor = qi::int_[_val = ph::new_<ast::NumberAst>(_1)]
+			| Ident[_val = ph::new_<ast::IdentAst>(_1)]
+			| '(' >> Expr[_val = _1] >> ')';
+		E1 = Factor[_val = _1] >>
+			*(('*' >> Factor[_val = ph::new_<ast::BinaryExpAst>("*", _val, _1)])
+			| ('/' >> Factor[_val = ph::new_<ast::BinaryExpAst>("/", _val, _1)])
+			| ('%' >> Factor[_val = ph::new_<ast::BinaryExpAst>("%", _val, _1)]));
+		E2 = E1[_val = _1] >>
+			*(('+' >> E1[_val = ph::new_<ast::BinaryExpAst>("+", _val, _1)])
+			| ('-' >> E1[_val = ph::new_<ast::BinaryExpAst>("-", _val, _1)]));
+		E3 = E2[_val = _1] >>
+			*(("==" >> E2[_val = ph::new_<ast::BinaryExpAst>("==", _val, _1)])
+			| ("!=" >> E2[_val = ph::new_<ast::BinaryExpAst>("!=", _val, _1)])
+			| ('<' >> E2[_val = ph::new_<ast::BinaryExpAst>("<", _val, _1)])
+			| ('>' >> E2[_val = ph::new_<ast::BinaryExpAst>(">", _val, _1)])
+			| ("<=" >> E2[_val = ph::new_<ast::BinaryExpAst>("<=", _val, _1)])
+			| (">=" >> E2[_val = ph::new_<ast::BinaryExpAst>(">=", _val, _1)]));
+		E4 = E3[_val = _1] | ('!' >> E3[_val = ph::new_<ast::MonoExpAst>("!", _1)]);
+		Expr = E4[_val = _1] >>
+			*(("&&" >> E4[_val = ph::new_<ast::BinaryExpAst>("&&", _val, _1)])
+			| ("||" >> E4[_val = ph::new_<ast::BinaryExpAst>("||", _val, _1)]));
 	}
 };
 
+} // namespace parser
+} // namespace myLang
 
-int main()
+
+int main(int argc, const char* argv[])
 {
-
-	while(true)
+	std::string input{}, s;
+	assert(argc >= 2);
+	std::string filename(argv[1]);
+	std::vector<std::string> lines;
+	std::ifstream input_file(filename);
+	if(!input_file.is_open())
 	{
-		std::string s{}; getline(std::cin, s);
-		if(s == "exit") { return !puts("exit"); }
-
-		int res;
-		auto it = std::begin(s);
-		Calc<std::string::iterator> calc;
-		bool success = qi::phrase_parse(
-			it,
-			std::end(s),
-			calc,
-			qi::space,
-			res
-		);
-
-		if(success and it == std::end(s))
-		{
-			std::cout << "OK result: " << res << std::endl;
-		}
-		else std::cout << "NG" << std::endl;
+		std::cerr << "Could not open the file '" << filename << "'" << std::endl;
+		return EXIT_FAILURE;
 	}
 
-	return 0;
+	while(std::getline(input_file, s)) { input += s; input += '\n'; }
+
+	auto it = std::begin(input);
+	myLang::parser::Calc<std::string::iterator, qi::standard_wide::space_type> calc;
+	myLang::ast::ModuleAst* res = nullptr;
+	bool success = qi::phrase_parse(
+		it,
+		std::end(input),
+		calc,
+		qi::standard_wide::space,
+		res
+	);
+
+	if(success and it == std::end(input)) { std::cout << "OK" << std::endl; }
+	else { std::cout << "NG" << std::endl; }
+
+	return EXIT_SUCCESS;
 }

@@ -21,8 +21,7 @@ enum AstID {
 	WhileStmtID,
 };
 
-struct BaseAst {
-private:
+class BaseAst {
 	AstID id;
 public:
 	BaseAst(AstID x) : id(x) {}
@@ -30,7 +29,8 @@ public:
 	AstID getID() const { return this->id; }
 };
 
-struct FuncAst : BaseAst {
+class FuncAst : public BaseAst{
+public:
 	std::string Name;
 	std::vector<BaseAst*> Inst;
 
@@ -44,9 +44,11 @@ struct FuncAst : BaseAst {
 	std::vector<BaseAst*>& getInst() { return this->Inst; }
 };
 
-struct ModuleAst : BaseAst {
+class ModuleAst : public BaseAst{
+public:
 	std::vector<std::string> Vars;
 	std::vector<FuncAst*> Funcs;
+
 	ModuleAst() : BaseAst(AstID::ModuleID)
 	{
 		std::cerr << "ModuleAst(" << this << ") " << std::endl;
@@ -57,9 +59,9 @@ struct ModuleAst : BaseAst {
 	std::vector<FuncAst*>& getFuncs() { return this->Funcs; }
 };
 
-struct NumberAst : BaseAst {
+class NumberAst : public BaseAst{
 	int Val;
-
+public:
 	NumberAst(const int& val) : BaseAst(AstID::NumberID), Val(val)
 	{
 		std::cerr << "NumberAst(" << this << ") " << Val << std::endl;
@@ -68,9 +70,9 @@ struct NumberAst : BaseAst {
 	int getVal() { return this->Val; }
 };
 
-struct IdentAst : BaseAst {
+class IdentAst : public BaseAst{
 	std::string Ident;
-
+public:
 	IdentAst(const std::string& ident) : BaseAst(AstID::IdentID), Ident(ident)
 	{
 		std::cerr << "IdentAst(" << this << ") " << Ident << std::endl;
@@ -79,11 +81,11 @@ struct IdentAst : BaseAst {
 	std::string& getIdent() { return this->Ident; }
 };
 
-struct MonoExpAst : BaseAst {
+class MonoExpAst : public BaseAst{
 	std::string Op;
 	BaseAst* Lhs;
-
-	MonoExpAst(const std::string& op, BaseAst* lhs) : BaseAst(AstID::MonoExpID), Op(op)
+public:
+	MonoExpAst(const std::string& op, BaseAst* lhs) : BaseAst(AstID::MonoExpID), Op(op), Lhs(lhs)
 	{
 		std::cerr << "MonoExpAst(" << this << ") " << op << ' ' << lhs << std::endl;
 	}
@@ -93,7 +95,8 @@ struct MonoExpAst : BaseAst {
 	BaseAst* getLhs() { return this->Lhs; }
 };
 
-struct BinaryExpAst : BaseAst {
+class BinaryExpAst : public BaseAst{
+public:
 	std::string Op;
 	BaseAst* Lhs, * Rhs;
 
@@ -109,13 +112,14 @@ struct BinaryExpAst : BaseAst {
 	BaseAst* getRhs() { return this->Rhs; }
 };
 
-struct BuiltinAst : BaseAst {
+class BuiltinAst : public BaseAst{
+public:
 	std::string Name;
 	std::vector<BaseAst*> Args;
 
 	BuiltinAst(const std::string& name) : BaseAst(AstID::BuiltinID), Name(name)
 	{
-		std::cerr << "BuildtinAst(" << this << ") " << name << std::endl;
+		std::cerr << "BuiltinAst(" << this << ") " << name << std::endl;
 	}
 	~BuiltinAst() { for(auto arg : this->Args) { delete arg; } }
 	static inline bool classOf(const BaseAst* base) { return base->getID() == AstID::BuiltinID; }
@@ -123,7 +127,8 @@ struct BuiltinAst : BaseAst {
 	std::vector<BaseAst*>& getArgs() { return this->Args; }
 };
 
-struct AssignAst : BaseAst {
+class AssignAst : public BaseAst{
+public:
 	std::string Name;
 	BaseAst* Val;
 
@@ -137,7 +142,8 @@ struct AssignAst : BaseAst {
 	BaseAst* getVal() { return this->Val; }
 };
 
-struct StmtsAst : BaseAst {
+class StmtsAst : public BaseAst{
+public:
 	std::vector<BaseAst*> Stmts;
 
 	StmtsAst() : BaseAst(AstID::StmtID)
@@ -149,7 +155,8 @@ struct StmtsAst : BaseAst {
 	std::vector<BaseAst*>& getStmts() { return this->Stmts; }
 };
 
-class IfStmtAst : BaseAst {
+class IfStmtAst : public BaseAst{
+public:
 	BaseAst* Cond;
 	BaseAst* ThenStmt;
 	BaseAst* ElseStmt;
@@ -170,9 +177,11 @@ class IfStmtAst : BaseAst {
 	BaseAst* getElseStmt() { return this->ElseStmt; }
 };
 
-struct WhileStmtAst : BaseAst {
+class WhileStmtAst : public BaseAst{
+public:
 	BaseAst* Cond;
 	std::vector<BaseAst*> LoopStmt;
+	
 	WhileStmtAst() : BaseAst(AstID::WhileStmtID), Cond()
 	{
 		std::cerr << "WhileStmtAst(" << this << ")" << std::endl;
@@ -220,7 +229,7 @@ BOOST_FUSION_ADAPT_STRUCT(
 BOOST_FUSION_ADAPT_STRUCT(
 	myLang::ast::WhileStmtAst,
 	(myLang::ast::BaseAst*, Cond)
-	(myLang::ast::BaseAst*, LoopStmt)
+	(std::vector<myLang::ast::BaseAst*>, LoopStmt)
 )
 BOOST_FUSION_ADAPT_STRUCT(
 	myLang::ast::StmtsAst,
