@@ -29,7 +29,7 @@ public:
 	AstID getID() const { return this->id; }
 };
 
-class FuncAst : public BaseAst{
+class FuncAst : public BaseAst {
 public:
 	std::string Name;
 	std::vector<BaseAst*> Inst;
@@ -44,7 +44,7 @@ public:
 	std::vector<BaseAst*>& getInst() { return this->Inst; }
 };
 
-class ModuleAst : public BaseAst{
+class ModuleAst : public BaseAst {
 public:
 	std::vector<std::string> Vars;
 	std::vector<FuncAst*> Funcs;
@@ -59,7 +59,7 @@ public:
 	std::vector<FuncAst*>& getFuncs() { return this->Funcs; }
 };
 
-class NumberAst : public BaseAst{
+class NumberAst : public BaseAst {
 	int Val;
 public:
 	NumberAst(const int& val) : BaseAst(AstID::NumberID), Val(val)
@@ -70,7 +70,7 @@ public:
 	int getVal() { return this->Val; }
 };
 
-class IdentAst : public BaseAst{
+class IdentAst : public BaseAst {
 	std::string Ident;
 public:
 	IdentAst(const std::string& ident) : BaseAst(AstID::IdentID), Ident(ident)
@@ -81,7 +81,7 @@ public:
 	std::string& getIdent() { return this->Ident; }
 };
 
-class MonoExpAst : public BaseAst{
+class MonoExpAst : public BaseAst {
 	std::string Op;
 	BaseAst* Lhs;
 public:
@@ -95,7 +95,7 @@ public:
 	BaseAst* getLhs() { return this->Lhs; }
 };
 
-class BinaryExpAst : public BaseAst{
+class BinaryExpAst : public BaseAst {
 public:
 	std::string Op;
 	BaseAst* Lhs, * Rhs;
@@ -112,7 +112,7 @@ public:
 	BaseAst* getRhs() { return this->Rhs; }
 };
 
-class BuiltinAst : public BaseAst{
+class BuiltinAst : public BaseAst {
 public:
 	std::string Name;
 	std::vector<BaseAst*> Args;
@@ -127,7 +127,7 @@ public:
 	std::vector<BaseAst*>& getArgs() { return this->Args; }
 };
 
-class AssignAst : public BaseAst{
+class AssignAst : public BaseAst {
 public:
 	std::string Name;
 	BaseAst* Val;
@@ -142,7 +142,7 @@ public:
 	BaseAst* getVal() { return this->Val; }
 };
 
-class StmtsAst : public BaseAst{
+class StmtsAst : public BaseAst {
 public:
 	std::vector<BaseAst*> Stmts;
 
@@ -155,7 +155,7 @@ public:
 	std::vector<BaseAst*>& getStmts() { return this->Stmts; }
 };
 
-class IfStmtAst : public BaseAst{
+class IfStmtAst : public BaseAst {
 public:
 	BaseAst* Cond;
 	BaseAst* ThenStmt;
@@ -177,7 +177,7 @@ public:
 	BaseAst* getElseStmt() { return this->ElseStmt; }
 };
 
-class WhileStmtAst : public BaseAst{
+class WhileStmtAst : public BaseAst {
 public:
 	BaseAst* Cond;
 	std::vector<BaseAst*> LoopStmt;
