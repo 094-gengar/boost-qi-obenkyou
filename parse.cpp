@@ -32,9 +32,9 @@ struct Calc : qi::grammar<Iterator, ast::ModuleAst*(), Skipper> {
 	Calc() : Calc::base_type(Module)
 	{
 		Module = Vars[_val = ph::new_<ast::ModuleAst>(), ph::at_c<0>(*_val) = _1] >> *Func[ph::push_back(ph::at_c<1>(*_val), _1)];
-		// Ident = qi::lexeme[(qi::alpha[_val = _1] | qi::char_('_')[_val = _1]) >> *(qi::alnum[_val += _1] | qi::char_('_')[_val += 1])];
-		Ident = qi::lexeme[qi::alpha[_val = _1] >> *qi::alnum[_val += _1]];
-		Vars = "let" >> Ident[ph::push_back(_val, _1)] >> *(',' >> Ident[ph::push_back(_val, _1)]);
+		Ident = qi::lexeme[(qi::alpha | qi::char_('_'))[_val = _1] >> *((qi::alnum | qi::char_('_'))[_val += _1])];
+		//Ident = qi::lexeme[qi::alpha[_val = _1] >> *qi::alnum[_val += _1]];
+		Vars = "var" >> Ident[ph::push_back(_val, _1)] >> *(',' >> Ident[ph::push_back(_val, _1)]);
 		Func = "fn" >> Ident[_val = ph::new_<ast::FuncAst>(_1)] >> *Stmts[ph::push_back(ph::at_c<1>(*_val), _1)] >> "end";
 		Stmt = Builtin | Assign | IfStmt | WhileStmt;
 		Assign = Ident[_val = ph::new_<ast::AssignAst>(_1)] >> '=' >> Expr[ph::at_c<1>(*_val) = _1];
