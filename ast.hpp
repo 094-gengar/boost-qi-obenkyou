@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdint>
 #include <iostream>
 #include <vector>
 #include <boost/fusion/include/adapt_struct.hpp>
@@ -60,14 +61,14 @@ public:
 };
 
 class NumberAst : public BaseAst {
-	int Val;
+	std::int_fast64_t Val;
 public:
-	NumberAst(const int& val) : BaseAst(AstID::NumberID), Val(val)
+	NumberAst(const std::int_fast64_t& val) : BaseAst(AstID::NumberID), Val(val)
 	{
 		std::cerr << "NumberAst(" << this << ") " << Val << std::endl;
 	}
 	static inline bool classOf(const BaseAst* base) { return base->getID() == AstID::NumberID; }
-	int getVal() { return this->Val; }
+	std::int_fast64_t getVal() { return this->Val; }
 };
 
 class IdentAst : public BaseAst {
@@ -142,6 +143,7 @@ public:
 	BaseAst* getVal() { return this->Val; }
 };
 
+/*
 class StmtsAst : public BaseAst {
 public:
 	std::vector<BaseAst*> Stmts;
@@ -154,12 +156,13 @@ public:
 	static inline bool classOf(const BaseAst* base) { return base->getID() == AstID::StmtID; }
 	std::vector<BaseAst*>& getStmts() { return this->Stmts; }
 };
+*/
 
 class IfStmtAst : public BaseAst {
 public:
 	BaseAst* Cond;
-	BaseAst* ThenStmt;
-	BaseAst* ElseStmt;
+	std::vector<BaseAst*> ThenStmt;
+	std::vector<BaseAst*> ElseStmt;
 
 	IfStmtAst() : BaseAst(AstID::IfStmtID), Cond(), ThenStmt(), ElseStmt()
 	{
@@ -168,13 +171,13 @@ public:
 	~IfStmtAst()
 	{
 		delete this->Cond;
-		delete this->ThenStmt;
-		delete this->ElseStmt;
+		for(auto s : this->ThenStmt) { delete s; }
+		for(auto s : this->ElseStmt) { delete s; }
 	}
 	static inline bool classOf(const BaseAst* base) { return base->getID() == AstID::IfStmtID; }
 	BaseAst* getCond() { return this->Cond; }
-	BaseAst* getThenStmt() { return this->ThenStmt; }
-	BaseAst* getElseStmt() { return this->ElseStmt; }
+	std::vector<BaseAst*> getThenStmt() { return this->ThenStmt; }
+	std::vector<BaseAst*> getElseStmt() { return this->ElseStmt; }
 };
 
 class WhileStmtAst : public BaseAst {
@@ -223,15 +226,17 @@ BOOST_FUSION_ADAPT_STRUCT(
 BOOST_FUSION_ADAPT_STRUCT(
 	myLang::ast::IfStmtAst,
 	(myLang::ast::BaseAst*, Cond)
-	(myLang::ast::BaseAst*, ThenStmt)
-	(myLang::ast::BaseAst*, ElseStmt)
+	(std::vector<myLang::ast::BaseAst*>, ThenStmt)
+	(std::vector<myLang::ast::BaseAst*>, ElseStmt)
 )
 BOOST_FUSION_ADAPT_STRUCT(
 	myLang::ast::WhileStmtAst,
 	(myLang::ast::BaseAst*, Cond)
 	(std::vector<myLang::ast::BaseAst*>, LoopStmt)
 )
+/*
 BOOST_FUSION_ADAPT_STRUCT(
 	myLang::ast::StmtsAst,
 	(std::vector<myLang::ast::BaseAst*>, Stmts)
 )
+*/
