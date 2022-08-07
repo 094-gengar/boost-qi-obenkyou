@@ -251,11 +251,14 @@ struct AstEval {
 	{
 		bool isLhsNumber = ast->getLhs()->getID() == ast::NumberID,
 			 isLhsMonoExp = ast->getLhs()->getID() == ast::MonoExpID,
-			 isLhsBinExp = ast->getLhs()->getID() == ast::BinaryExpID;
+			 isLhsBinExp = ast->getLhs()->getID() == ast::BinaryExpID,
+			 isLhsIdent = ast->getLhs()->getID() == ast::IdentID;
+			 
 		auto LhsEval =
 			isLhsNumber ? evalNumberAst(static_cast<ast::NumberAst*>(ast->getLhs())) : \
 			isLhsMonoExp ? evalMonoExpAst(static_cast<ast::MonoExpAst*>(ast->getLhs())) : \
 			isLhsBinExp ? evalBinaryExpAst(static_cast<ast::BinaryExpAst*>(ast->getLhs())) : \
+			isLhsIdent ? vals[static_cast<ast::IdentAst*>(ast->getLhs())->getIdent()] : \
 			-1; // dummy
 		if(ast->getOp() == "!") { return static_cast<std::int_fast64_t>(! LhsEval); }
 		else // otherwize

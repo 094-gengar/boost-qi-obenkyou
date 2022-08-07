@@ -36,7 +36,7 @@ struct Calc : qi::grammar<Iterator, ast::ModuleAst*(), Skipper> {
 
 		Ident = qi::lexeme[(qi::alpha | qi::char_('_'))[_val = _1] >> *((qi::alnum | qi::char_('_'))[_val += _1])];
 
-		Vars = "var" >> Ident[ph::push_back(_val, _1)] >> *(',' >> Ident[ph::push_back(_val, _1)]);
+		Vars = "var" >> Ident[ph::push_back(_val, _1)] >> *(',' >> Ident[ph::push_back(_val, _1)]) >> ';';
 
 		Func = "fn" >> Ident[_val = ph::new_<ast::FuncAst>(_1)] >> '{' >> *Stmt[ph::push_back(ph::at_c<1>(*_val), _1)] >> '}';
 
@@ -101,7 +101,6 @@ int main(int argc, const char* argv[])
 	}
 
 	while(std::getline(fIn, s)) { input += s; input += '\n'; }
-	std::cerr << input << std::endl;
 
 	auto it = std::begin(input);
 	myLang::parser::Calc<std::string::iterator, qi::standard_wide::space_type> calc;

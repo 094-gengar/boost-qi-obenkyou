@@ -1,23 +1,6 @@
-var x, y, _z
+var x, ans;
 fn main {
-  x = 1;
-  print x;
-  x = 3 * 5 * 7;
-  print x;
-  _z = x == 105;
-  print _z;
-  if x == 105 {
-    y = 12345;
-  } else {
-    y = -1;
-  }
-  print y;
-  x = 0;
-  while x < 10 {
-    x = x + 1;
-    print x;
-    if x >= 5 {
-      break;
-    }
-  }
+	scan x;
+	ans = !x;
+	print ans;
 }
