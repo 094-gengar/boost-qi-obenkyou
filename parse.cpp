@@ -32,26 +32,32 @@ struct Calc : qi::grammar<Iterator, ast::ModuleAst*(), Skipper> {
 
 	Calc() : Calc::base_type(Module)
 	{
-		Module = Vars[_val = ph::new_<ast::ModuleAst>(), ph::at_c<0>(*_val) = _1] >> *Func[ph::push_back(ph::at_c<1>(*_val), _1)];
+		Module = Vars[_val = ph::new_<ast::ModuleAst>(), ph::at_c<0>(*_val) = _1] >> *(Func[ph::push_back(ph::at_c<1>(*_val), _1)]);
+
 		Ident = qi::lexeme[(qi::alpha | qi::char_('_'))[_val = _1] >> *((qi::alnum | qi::char_('_'))[_val += _1])];
-		//Ident = qi::lexeme[qi::alpha[_val = _1] >> *qi::alnum[_val += _1]];
+
 		Vars = "var" >> Ident[ph::push_back(_val, _1)] >> *(',' >> Ident[ph::push_back(_val, _1)]);
-		Func = "fn" >> Ident[_val = ph::new_<ast::FuncAst>(_1)] >> +Stmt[ph::push_back(ph::at_c<1>(*_val), _1)] >> "end";
-		Stmt = Builtin | Assign | IfStmt | WhileStmt;
-		Assign = Ident[_val = ph::new_<ast::AssignAst>(_1)] >> '=' >> Expr[ph::at_c<1>(*_val) = _1];
+
+		Func = "fn" >> Ident[_val = ph::new_<ast::FuncAst>(_1)] >> '{' >> *Stmt[ph::push_back(ph::at_c<1>(*_val), _1)] >> '}';
+
+		Stmt = Builtin | IfStmt | WhileStmt | Assign;
+
+		Assign = Ident[_val = ph::new_<ast::AssignAst>(_1)] >> '=' >> Expr[ph::at_c<1>(*_val) = _1] >> ';';
+
 		Builtin =
-			  ("break" >> qi::eps[_val = ph::new_<ast::BuiltinAst>("break")])
+			 (("break" >> qi::eps[_val = ph::new_<ast::BuiltinAst>("break")])
 			| ("continue" >> qi::eps[_val = ph::new_<ast::BuiltinAst>("continue")])
 			| ("exit" >> qi::eps[_val = ph::new_<ast::BuiltinAst>("exit")])
 			| ("return" >> qi::eps[_val = ph::new_<ast::BuiltinAst>("return")])
 			| ("print" >> Ident[_val = ph::new_<ast::BuiltinAst>("print"), ph::push_back(ph::at_c<1>(*_val), ph::new_<ast::IdentAst>(_1))])
-			| ("scan" >> Ident[_val = ph::new_<ast::BuiltinAst>("scan"), ph::push_back(ph::at_c<1>(*_val), ph::new_<ast::IdentAst>(_1))]);
+			| ("scan" >> Ident[_val = ph::new_<ast::BuiltinAst>("scan"), ph::push_back(ph::at_c<1>(*_val), ph::new_<ast::IdentAst>(_1))])) >> ';';
+
 		IfStmt = "if" >> Expr[_val = ph::new_<ast::IfStmtAst>(), ph::at_c<0>(*_val) = _1]
-			>> "then" >> +Stmt[ph::push_back(ph::at_c<1>(*_val), _1)]
-			>> -("else" >> +Stmt[ph::push_back(ph::at_c<2>(*_val), _1)])
-			>> "end";
-		WhileStmt = "while" >> Expr[_val = ph::new_<ast::WhileStmtAst>(), ph::at_c<0>(*_val) = _1] >> "do"
-			>> +Stmt[ph::push_back(ph::at_c<1>(*_val), _1)] >> "end";
+			>> '{' >> *Stmt[ph::push_back(ph::at_c<1>(*_val), _1)]
+			>> -(qi::char_('}') >> "else" >> '{' >> *Stmt[ph::push_back(ph::at_c<2>(*_val), _1)]) >> '}';
+
+		WhileStmt = "while" >> Expr[_val = ph::new_<ast::WhileStmtAst>(), ph::at_c<0>(*_val) = _1] >> "{"
+			>> *Stmt[ph::push_back(ph::at_c<1>(*_val), _1)] >> '}';
 
 		Factor = qi::int_[_val = ph::new_<ast::NumberAst>(_1)]
 			| Ident[_val = ph::new_<ast::IdentAst>(_1)]
@@ -85,16 +91,16 @@ int main(int argc, const char* argv[])
 {
 	std::string input{}, s;
 	assert(argc >= 2);
-	std::string filename(argv[1]);
+	std::string fName(argv[1]);
 	std::vector<std::string> lines;
-	std::ifstream input_file(filename);
-	if(!input_file.is_open())
+	std::ifstream fIn(fName);
+	if(not fIn.is_open())
 	{
-		std::cerr << "Could not open the file '" << filename << "'" << std::endl;
+		std::cerr << "Could not open the file '" << fName << "'" << std::endl;
 		return EXIT_FAILURE;
 	}
 
-	while(std::getline(input_file, s)) { input += s; input += ' '; }
+	while(std::getline(fIn, s)) { input += s; input += '\n'; }
 	std::cerr << input << std::endl;
 
 	auto it = std::begin(input);

@@ -35,6 +35,7 @@ struct AstEval {
 	};
 	std::unordered_map<std::string, std::int_fast64_t> vals;
 	std::unordered_map<std::string, ast::FuncAst*> funcs;
+
 	AstEval(ast::ModuleAst* ast) { evalModuleAst(ast); }
 	~AstEval()
 	{
@@ -42,6 +43,7 @@ struct AstEval {
 		vals.clear();
 		funcs.clear();
 	}
+
 	void evalModuleAst(ast::ModuleAst* ast)
 	{
 		for(const auto& var : ast->getVars())
@@ -59,6 +61,7 @@ struct AstEval {
 		if(funcs.find(std::string("main")) != std::end(funcs)) { evalFuncAst(funcs["main"]); }
 		else { assert(0 && "not found \"fn main\""); }
 	}
+
 	void evalFuncAst(ast::FuncAst* ast)
 	{
 		if(ifExit)return;
@@ -69,6 +72,7 @@ struct AstEval {
 			if(ifReturn) { ifReturn = false; break; }
 		}
 	}
+
 	void evalStmts(ast::BaseAst* ast)
 	{
 		if(ifExit)return;
@@ -93,6 +97,7 @@ struct AstEval {
 			assert(0 && "illegal ast");
 		}
 	}
+
 	void evalBuiltinAst(ast::BuiltinAst* ast)
 	{
 		if(ifExit)return;
@@ -116,18 +121,20 @@ struct AstEval {
 			}
 		}
 	}
+
 	void evalAssignAst(ast::AssignAst* ast)
 	{
 		if(ifExit)return;
 		vals[ast->getName()] = evalExpr(ast->getVal());
 	}
+
 	void evalIfStmtAst(ast::IfStmtAst* ast)
 	{
 		if(ifExit)return;
 		auto CondEval = evalExpr(ast->Cond);
 		if(CondEval)
 		{
-			for(auto stmt : ast->getElseStmt())
+			for(auto stmt : ast->getThenStmt())
 			{
 				evalStmts(stmt);
 			}
@@ -143,6 +150,7 @@ struct AstEval {
 			}
 		}
 	}
+
 	void evalWhileStmtAst(ast::WhileStmtAst* ast)
 	{
 		if(ifExit)return;
@@ -167,6 +175,7 @@ struct AstEval {
 		}
 		else return;
 	}
+
 	std::int_fast64_t evalExpr(ast::BaseAst* ast)
 	{
 		if(ast->getID() == ast::NumberID)
@@ -190,10 +199,12 @@ struct AstEval {
 			assert(0 && "no match");
 		}
 	}
+
 	std::int_fast64_t evalNumberAst(ast::NumberAst* ast)
 	{
 		return ast->getVal();
 	}
+
 	std::int_fast64_t evalBinaryExpAst(ast::BinaryExpAst* ast)
 	{
 		bool isLhsNumber = ast->getLhs()->getID() == ast::NumberID,
@@ -235,6 +246,7 @@ struct AstEval {
 		}
 		return 0;
 	}
+
 	std::int_fast64_t evalMonoExpAst(ast::MonoExpAst* ast)
 	{
 		bool isLhsNumber = ast->getLhs()->getID() == ast::NumberID,

@@ -1,24 +1,23 @@
 var x, y, _z
-fn main
-  x = 1
-  print x
-  x = 3 * 5 * 7
-  print x
-  _z = x == 105
-  print _z
-  if x == 105 then
-    y = 12345
-  else
-    y = -1
-  end
-  print y
-  x = 0
-  while x < 100 do
-    print x
-    if x >= 50 then
-      break
-    end
-    x = x + 1
-  end
-  print x
-end
+fn main {
+  x = 1;
+  print x;
+  x = 3 * 5 * 7;
+  print x;
+  _z = x == 105;
+  print _z;
+  if x == 105 {
+    y = 12345;
+  } else {
+    y = -1;
+  }
+  print y;
+  x = 0;
+  while x < 10 {
+    x = x + 1;
+    print x;
+    if x >= 5 {
+      break;
+    }
+  }
+}
